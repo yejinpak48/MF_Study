@@ -2,56 +2,79 @@ package testProject;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 public class NewLottoList4 {
 	final int MINNUM = 1;
 	final int MAXNUM = 45;
 
 	// 랜덤 출력 유무
-	boolean random = false;
+	private boolean setMix = false;
 
 	// 로또 번호의 갯수, 등수
-	int lottoCount = 6;
-	String lottoName = "";
+	private int lottoSize = 6;
+	private String lottoName = "";
 
-	// 각 등수 별로 출력할 인원 수를 담을 변수 선언 (1~5등, 미등수, 전체개수)
-	int first = 0;
-	int second = 0;
-	int third = 0;
-	int fourth = 0;
-	int fifth = 0;
-	int noRank = 0;
-	int total = 0;
+	// 각 등수 별로 출력할 인원 수를 담을 변수 선언 (1~5등, 전체개수)
+	private final static int firstCount = 1;
+	private int secondCount = 0;
+	private int thirdCount = 0;
+	private int fourthCount = 0;
+	private int fifthCount = 0;
+	private int totalCount = 0;
 
-	// 당첨자 수, 랜덤 출력 시 나눌 기준
-	int rank = 0;
-	int div = 0;
+	// 미당첨자 수, 당첨자 수, 랜덤 출력 시 나눌 기준
+	private int noRank = 0;
+	private int rank = 0;
+	private int div = 0;
 
 	// 1등 번호 list
-	List<Integer> lottoNum = new ArrayList<Integer>();
-	
+	Set<Integer> lottoNum = new HashSet<Integer>();
+
 	// 등수별, 당첨, 미당첨 list
 	List<List<Integer>> firstList = new ArrayList();
-	List<List<Integer>> secondList = new ArrayList(); 
-	List<List<Integer>> thirdList = new ArrayList(); 
-	List<List<Integer>> fourthList = new ArrayList(); 
-	List<List<Integer>> fifthList = new ArrayList(); 
-	List<List<Integer>> noLottoList = new ArrayList(); 
-	List<List<Integer>> allRankList = new ArrayList();
+	List<List<Integer>> secondList = new ArrayList();
+	List<List<Integer>> thirdList = new ArrayList();
+	List<List<Integer>> fourthList = new ArrayList();
+	List<List<Integer>> fifthList = new ArrayList();
+	List<Set<Integer>> noLottoList = new ArrayList();
+	List<Set<Integer>> allRankList = new ArrayList();
 
 	public static void main(String[] args) {
 		NewLottoList4 lotto = new NewLottoList4();
 
-		// param 유효성 검사
-		lotto.argsValiddation(args);
+		try {
+
+			// param 유효성 검사
+			lotto.argsValiddation(args);
+
+			// 로또 번호 생성
+			lotto.inputLottoList();
+
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
 
 	}
 
-	public void argsValiddation(String[] args) {
+	public void argsValiddation(String[] args) throws Exception {
+		// args의 길이가 3개 이상인지, 길이가 4이상일 때 3번째 자리에 들어온 값이 대문자 TRUE라면 변수에 담기
+		if (args.length > 2) {
+			setMix = false;
+		} else {
+			throw new Exception(
+					"파라메터가 없습니다.\nP1(필수) : 1등숫자(,로구분) / P2(필수) : 각등수별 갯수(1:1,2:3...) / P3(필수) : 생성할 전체 수 / P4(옵션) : Mix여부(TRUE) ");
+		}
+		if (args.length > 3) {
+			String ran = args[3];
+			if (ran.equals("TRUE")) {
+				setMix = true;
+			}
+		}
+
 		// 입력 받은 argument를 변수에 담는다.
 		String lottoNumArgs = args[0];
 		String rankAll = args[1];
@@ -62,76 +85,89 @@ public class NewLottoList4 {
 		String[] lottoSplit = lottoNumArgs.split(",");
 
 		// 1등 번호가 지정된 갯수가 맞는지 확인
-		if (lottoSplit.length != lottoCount) {
-			System.out.println("당첨 번호는 " + lottoCount + "개여야 합니다.");
+		if (lottoSplit.length != lottoSize) {
+			System.out.println("당첨 번호는 " + lottoSize + "개여야 합니다.");
 			System.exit(0);
 		}
 
-		// 숫자와 기호 ,:만 포함되었을 시
-		if (lottoNumArgs.matches("^[0-9,:]*$")) {
-			for (int i = 0; i < lottoSplit.length; i++) {
+		for (int i = 0; i < lottoSplit.length; i++) {
+			// 숫자로 변환
+			lottoNum.add(Integer.parseInt(lottoSplit[i]));
 
-				// int로 변환하여 list에 담기
-				lottoNum.add(Integer.parseInt(lottoSplit[i]));
-
-				// 1등 번호가 지정된 최소값, 최대값 범위 내에 있는지 확인
-				if (!(lottoNum.get(i) >= MINNUM && lottoNum.get(i) <= MAXNUM)) {
-					System.out.println(MINNUM + "과 " + MAXNUM + "사이의 수를 입력해주세요.");
-					System.exit(0);
+			// 1등 번호가 지정된 최소값, 최대값 범위 내에 있는지 확인
+			for(int item : lottoNum) {
+				if(MINNUM > item || MAXNUM < item) {
+					throw new Exception(String.format("1등 각 숫자는 %d 이상, %d 이하의 수를 입력해주세요.", MINNUM, MAXNUM));
 				}
 			}
-		} else {
-			System.out.println("입력하신 문자가 올바르지 않습니다.");
-			System.exit(0);
+			
 		}
+		int count = 0;
+		for (Integer r : lottoNum) {
+			// 1~5등까지 다 넣은 리스트
+			for (Integer c : lottoNum) {
+				// 로또 당첨번호
+				if (r == c) {
+					count++;
+					break;
+				}
+			}
+		}
+		if (count != 6) {
+			throw new Exception("로또 번호는 중복되선 안됩니다.");
+		}
+
 		// 각 등수 별 인원을 먼저 split 후, 인원 별 명수만 따로 int 변수에 담기
 		rankAllSplit = rankAll.split(",");
-		
-		if(rankAllSplit.length < 6) {
-			
-		first = Integer.parseInt(rankAllSplit[0].substring(2));
-		second = Integer.parseInt(rankAllSplit[1].substring(2));
-		third = Integer.parseInt(rankAllSplit[2].substring(2));
-		fourth = Integer.parseInt(rankAllSplit[3].substring(2));
-		fifth = Integer.parseInt(rankAllSplit[4].substring(2));
-		total = Integer.parseInt(totalPerson);
-		noRank = Integer.parseInt(totalPerson) - first - second - third - fourth - fifth;
+
+		if (rankAllSplit.length == lottoSize - 1) {
+
+			for (String item : rankAllSplit) {
+				int index = item.indexOf(":");
+				String grade = item.substring(0, index);
+				int gradeCount = Integer.parseInt(item.substring(index + 1));
+				
+				if (gradeCount >= 0) {
+					switch (grade) {
+					case "2":
+						secondCount = gradeCount;
+						break;
+					case "3":
+						thirdCount = gradeCount;
+						break;
+					case "4":
+						fourthCount = gradeCount;
+						break;
+					case "5":
+						fifthCount = gradeCount;
+						break;
+					}
+				} else {
+					throw new Exception("2~5등은 0이상이어야합니다.");
+				}
+			}
+
 
 		}
+		
+		// total보다 당첨자 수가 많으면 종료
+		if (totalCount > rank) {
+			totalCount = Integer.parseInt(totalPerson);
+			noRank = Integer.parseInt(totalPerson) - firstCount - secondCount - thirdCount - fourthCount - fifthCount;
+		}else {
+			throw new Exception("전체 개수는 당첨 개수보다 높고 숫자여야 합니다.");
+		}
+		
 		// 당첨자 수
-		rank = total - noRank;
+		rank = totalCount - noRank;
 
 		// 랜덤 출력 시 나눌 기준
 		if (rank < noRank) {
-			div = total / rank;
+			div = totalCount / rank;
 		} else {
-			div = total / noRank;
+			div = totalCount / noRank;
 		}
 
-		// total보다 당첨자 수가 많으면 종료
-		if (total < rank) {
-			System.out.println("전체 개수는 당첨 개수보다 높아야 합니다.");
-			System.exit(0);
-		}
-
-		// TRUE를 입력하지 않았을 시 boolean변수 안에 false값을 넣고 TRUE 입력 시 String변수로 받아 boolean값으로 변경
-		if (args.length > 2) {
-			random = false;
-		} else if (args.length > 3) {
-			String ran = args[3];
-				if (ran.equals("TRUE")) {
-					random = true;
-				} else {
-					System.out.println("입력하신 문자가 올바르지 않습니다.");
-					System.exit(0);
-				}
-		} else {
-			System.out.println("입력하신 문자가 올바르지 않습니다.");
-			System.exit(0);
-		}
-
-		// 로또 번호 생성
-		inputLottoList();
 
 	}
 
@@ -140,39 +176,31 @@ public class NewLottoList4 {
 		int condition = 0;
 
 		// 각 등수 별로 1등 번호와 같아야하는 개수를 정해 함수 실행하고 list로 담기
-		for (int i = 0; i < first; i++) {
-			condition = lottoCount;
-			firstList.add(lottoNum);
+		for (int i = 0; i < firstCount; i++) {
+			condition = lottoSize;
+			allRankList.add(lottoNum);
 		}
 		// 2등 당첨자 수만큼 list에 담기
-		for (int i = 0; i < second; i++) {
-			condition = lottoCount - 1;
-			secondList.add(RankLotto(condition, lottoNum, MAXNUM, MINNUM));
+		for (int i = 0; i < secondCount; i++) {
+			condition = lottoSize - 1;
+			allRankList.add(RankLotto(condition, lottoNum, MAXNUM, MINNUM));
 		}
-		for (int i = 0; i < third; i++) {
-			condition = lottoCount - 2;
-			thirdList.add(RankLotto(condition, lottoNum, MAXNUM, MINNUM));
+		for (int i = 0; i < thirdCount; i++) {
+			condition = lottoSize - 2;
+			allRankList.add(RankLotto(condition, lottoNum, MAXNUM, MINNUM));
 		}
-		for (int i = 0; i < fourth; i++) {
-			condition = lottoCount - 3;
-			fourthList.add(RankLotto(condition, lottoNum, MAXNUM, MINNUM));
+		for (int i = 0; i < fourthCount; i++) {
+			condition = lottoSize - 3;
+			allRankList.add(RankLotto(condition, lottoNum, MAXNUM, MINNUM));
 		}
-		for (int i = 0; i < fifth; i++) {
-			condition = lottoCount - 4;
-			fifthList.add(RankLotto(condition, lottoNum, MAXNUM, MINNUM));
+		for (int i = 0; i < fifthCount; i++) {
+			condition = lottoSize - 4;
+			allRankList.add(RankLotto(condition, lottoNum, MAXNUM, MINNUM));
 		}
 		for (int i = 0; i < noRank; i++) {
-			// condition = (int) (Math.random() * 2) + lottoCount - 6;
 			condition = (int) (Math.random() * 2);
 			noLottoList.add(RankLotto(condition, lottoNum, MAXNUM, MINNUM));
 		}
-
-		// 등수 별 list 한 곳에 담기
-		allRankList.addAll(firstList);
-		allRankList.addAll(secondList);
-		allRankList.addAll(thirdList);
-		allRankList.addAll(fourthList);
-		allRankList.addAll(fifthList);
 
 		// 출력
 		PrintLotto();
@@ -188,12 +216,12 @@ public class NewLottoList4 {
 	 * @param MINNUM    : 랜덤 최소값
 	 * @return : 로또 번호를 생성하여 리턴
 	 */
-	public List<Integer> RankLotto(int condition, List<Integer> lottoNum, int MAXNUM, int MINNUM) {
+	public Set<Integer> RankLotto(int condition, Set<Integer> lottoNum, int MAXNUM, int MINNUM) {
 		int lottoNumber = 0;
 		Random ran = new Random();
 
 		// 1등 번호를 담는 list
-		List<Integer> rankLotto = new ArrayList<Integer>(lottoNum);
+		Set<Integer> rankLotto = new HashSet<Integer>(lottoNum);
 
 		// 랜덤으로 구한 index를 각 등수의 자리수가 되도록 제거
 		while (true) {
@@ -209,16 +237,16 @@ public class NewLottoList4 {
 			lottoNumber = (int) (ran.nextInt(MAXNUM) + MINNUM);
 
 			// 1등 번호와 중복되지 않고, 현재 list내에 중복이 없을 시 난수를 담기
-			if (!lottoNum.contains(lottoNumber) && !rankLotto.contains(lottoNumber)) {
+			if (!lottoNum.contains(lottoNumber)) {
 				rankLotto.add(lottoNumber);
 			}
 			// 정해진 자리 수가 채워졌을 때 break; (현재는 6개)
-			if (rankLotto.size() == lottoCount) {
+			if (rankLotto.size() == lottoSize) {
 				break;
 			}
 		}
 		// 번호 순서 섞기
-		Collections.shuffle(rankLotto);
+		// Collections.shuffle(rankLotto);
 		return rankLotto;
 	}
 
@@ -236,8 +264,8 @@ public class NewLottoList4 {
 		// 랜덤 출력 미완성이라 랜덤 출력할 리스트
 		List<List<Integer>> prepareList = new ArrayList();
 
-		System.out.print(
-				"1:" + first + ",2:" + second + ",3:" + third + ",4:" + fourth + ",5:" + fifth + " " + total + "\n");
+		System.out.print("1:" + firstCount + ",2:" + secondCount + ",3:" + thirdCount + ",4:" + fourthCount + ",5:"
+				+ fifthCount + " " + totalCount + "\n");
 
 		System.out.println("=========== 결과 ===========");
 
@@ -247,9 +275,8 @@ public class NewLottoList4 {
 		System.out.println("나눌 값 :" + div + " 토탈 사이즈 :" + totalSize + " 당첨자 수 :" + rank + " 미당첨자수 :" + noRank);
 
 		// TURE일 시 적절하게 출력
-		if (random == true) {
+		if (setMix == true) {
 			Collections.shuffle(allRankList);
-
 			// 출력을 위해 전체 개수만큼 반복
 			for (int i = 1; i <= totalSize; i++) {
 				// 미당첨 > 당첨
@@ -297,16 +324,16 @@ public class NewLottoList4 {
 	/**
 	 * 각 등수 별 lottoName을 정하기 위한 메소드
 	 * 
-	 * @param list 출력 메소드에서 전달 받은 list 값
+	 * @param set 출력 메소드에서 전달 받은 list 값
 	 */
-	public void LottoName(List<Integer> list) {
+	public void LottoName(Set<Integer> set) {
 		int count = 0;
 		int j = 0;
 
 		// 당첨번호와 비교하여 count
-		while (j < list.size()) {
+		while (j < set.size()) {
 			count = 0;
-			for (Integer r : list) {
+			for (Integer r : set) {
 				// 1~5등까지 다 넣은 리스트
 				for (Integer c : lottoNum) {
 					// 로또 당첨번호
